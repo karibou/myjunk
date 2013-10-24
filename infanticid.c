@@ -60,6 +60,9 @@ static void fail(const char* s) {
     exit(1);
 }
 
+/* Handle children process termination.
+   Display error if needed but continue  and
+   exits at the end of the list */
 static void terminate_children()
 {
 int i=0;
@@ -93,7 +96,9 @@ void init_signals() {
 }
 
 
-void update_sigterm() {
+/* Enable specific SIGTERM handling by the parent proc
+   It becomes responsible for terminating children. */
+void handle_sigterm() {
     struct sigaction act;
 
     sigemptyset(&act.sa_mask);
@@ -101,7 +106,6 @@ void update_sigterm() {
 
     act.sa_handler = terminate_children;
 
-    /* We must kill children if we receive a SIGTERM */
     if (sigaction(SIGTERM, &act, NULL) < 0)
         fail("sigaction - sigterm");
 }
@@ -158,7 +162,7 @@ init_signals();
 
     printf("Number of children to be started : %d\n",(int)OPTIONS.NCORES);
     start_children(Index,OPTIONS.NCORES);
-    update_sigterm();
+    handle_sigterm();
     wait(&FatherStatus);
 
 }
