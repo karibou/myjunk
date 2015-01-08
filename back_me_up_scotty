@@ -1,0 +1,30 @@
+#!/bin/bash
+
+echo -n "Building exclude list..."
+#START_OF_EXCLUDE_LIST
+cat << EOF > /tmp/exclude.$$
+- /cgroup
+- /dev
+- /initrd.img
+- /initrd.img.old
+- /lost+found
+- /media
+- /mnt
+- /proc/*
+- /sys
+- /tmp
+- /workdisk
+- /vmlinuz
+- /vmlinuz.old
+- /home/caribou/Xplane
+- /home/caribou/.shotwell
+- /home/caribou/.cache
+- /home/caribou/.thumbnails
+- /home/caribou/custom-builds
+EOF
+echo "Done"
+#END_OF_EXCLUDE_LIST
+
+
+rsync ${1} -Sav --exclude-from=/tmp/exclude.$$  / /workdisk/backup/marvin_$(date +%Y%m%d)
+rm -f /tmp/exclude.$$
