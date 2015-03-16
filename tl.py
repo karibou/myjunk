@@ -19,6 +19,17 @@ Categories = {
 def show_help():
     return("Categories : {}".format(sorted(list(Categories.keys()))))
 
+def select_ua_tasks():
+    cases = []
+    regex = re.compile(r'L3 / L3 support')
+    with open(LogFile, 'r') as timelog:
+        for line in timelog:
+            if regex.findall(line):
+                case = regex.split(line)[-1].strip()
+                if case.lstrip(": ") not in cases:
+                    cases.append(case.lstrip(": "))
+    for I in cases:
+        print("{}) {}".format(cases.index(I)+1,I))
 
 def log_activity(category, task=None):
 
@@ -55,9 +66,13 @@ if __name__ == '__main__':
                 sys.exit(0)
             elif sys.argv[1] == 'new':
                 log_activity('new', 'Arrived')
+            elif sys.argv[1] == 'ua':
+                select_ua_tasks()
+                sys.exit(0)
             else:
                 log_activity(sys.argv[1])
         else:
+
             log_activity(sys.argv[1], sys.argv[3:])
         sys.exit(0)
 
