@@ -64,25 +64,20 @@ def select_tasks(category):
 def log_activity(category, task=None):
 
     now = time.localtime()
-    shortlogformat = '{:04d}-{:02d}-{:02d} {:02d}:{:02d}: {}\n'
-    longlogformat = '{:04d}-{:02d}-{:02d} {:02d}:{:02d}: {} : {}\n'
+    today = '{:04d}-{:02d}-{:02d} {:02d}:{:02d}'.format(
+            now.tm_year, now.tm_mon, now.tm_mday,
+            now.tm_hour, now.tm_min)
 
     with open(LogFile, 'a') as timelog:
         if task is None:
-            timelog.write(shortlogformat.format(
-                now.tm_year, now.tm_mon, now.tm_mday,
-                now.tm_hour, now.tm_min, category))
+            timelog.write('{}: {}\n'.format(today, category))
         else:
-            task_string = " ".join(task)
             if category in Categories.keys():
-                timelog.write(longlogformat.format(
-                    now.tm_year, now.tm_mon, now.tm_mday,
-                    now.tm_hour, now.tm_min, Categories[category],
-                    task_string))
+                timelog.write('{}: {} : {}\n'.format(
+                    today, Categories[category], task))
             else:
-                timelog.write(longlogformat.format(
-                    now.tm_year, now.tm_mon, now.tm_mday,
-                    now.tm_hour, now.tm_min, category, task_string))
+                timelog.write('{}: {} : {}\n'.format(
+                    today, category, task))
     return(0)
 
 if __name__ == '__main__':
@@ -104,8 +99,7 @@ if __name__ == '__main__':
                 log_activity(sys.argv[1])
             sys.exit(0)
         else:
-
-            log_activity(sys.argv[1], sys.argv[3:])
+            log_activity(sys.argv[1], " ".join(sys.argv[3:]))
         sys.exit(0)
 
     except ValueError:
