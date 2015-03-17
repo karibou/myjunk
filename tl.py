@@ -1,4 +1,16 @@
 #!/usr/bin/python3
+# Add a new task to the gtimelog log file.
+# Propose a list of task if only the category is supplied
+#
+# Copyright (c) 2006 Canonical Ltd.
+# Author: Louis Bouchard <louis.bouchard@ubuntu.com>
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.  See http://www.gnu.org/copyleft/gpl.html for
+# the full text of the license.
+
 import re, sys, time
 
 # LogFile='~/.local/share/gtimelog/timelog.txt'
