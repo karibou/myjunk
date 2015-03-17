@@ -30,9 +30,11 @@ Categories = {
 def show_help():
     return("Categories : {}".format(sorted(list(Categories.keys()))))
 
-def select_ua_tasks():
+
+def select_tasks(category):
     cases = []
-    regex = re.compile(r'L3 / L3 support')
+    mytask = 0
+    regex = re.compile(r'{}'.format(Categories[category]))
     with open(LogFile, 'r') as timelog:
         for line in timelog:
             if regex.findall(line):
@@ -40,7 +42,24 @@ def select_ua_tasks():
                 if case.lstrip(": ") not in cases:
                     cases.append(case.lstrip(": "))
     for I in cases:
-        print("{}) {}".format(cases.index(I)+1,I))
+        print("{}) {}".format(cases.index(I) + 1, I))
+    try:
+        mytask = input("Select task (0 to exit): ")
+        if mytask == '' or mytask == '0' or not mytask.isdecimal():
+            return(None, None)
+        else:
+            mytask = int(mytask)
+
+        if mytask > 0 and mytask <= len(cases):
+            return(category, cases[mytask - 1])
+        else:
+            print("Invalid task number")
+            return(None, None)
+
+    except KeyboardInterrupt:
+        print("Terminated\n")
+        sys.exit(1)
+
 
 def log_activity(category, task=None):
 
@@ -77,11 +96,13 @@ if __name__ == '__main__':
                 sys.exit(0)
             elif sys.argv[1] == 'new':
                 log_activity('new', 'Arrived')
-            elif sys.argv[1] == 'ua':
-                select_ua_tasks()
-                sys.exit(0)
+            elif sys.argv[1] in Categories.keys():
+                (category, task) = select_tasks(sys.argv[1])
+                if category is not None:
+                    log_activity(category, task)
             else:
                 log_activity(sys.argv[1])
+            sys.exit(0)
         else:
 
             log_activity(sys.argv[1], sys.argv[3:])
