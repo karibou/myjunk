@@ -12,6 +12,7 @@ args = ['s_server', '-quiet', '-www',
         '-accept', str(srv_port)]
 sleepTime = float(0.5)
 
+
 def create_cert():
     with open("server.pem", "w") as cert:
         cert.write('''Certificate:
@@ -109,6 +110,7 @@ checcxJAYGul2ZdcWtC9BkMF+pMiSHBrR8cSgrXpPQgIszp/NL4dQXLJYP0LSXI9
 BuE13LjbCQcCNsh451MauZV3tmk5/L58dhEp/SULOsjCejZAMc4O
 -----END RSA PRIVATE KEY-----
 ''')
+
 
 def start_server(args):
     pid = os.fork()
