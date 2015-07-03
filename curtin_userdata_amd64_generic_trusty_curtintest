@@ -1,0 +1,73 @@
+#cloud-config
+debconf_selections:
+ maas: |
+  {{for line in str(curtin_preseed).splitlines()}}
+  {{line}}
+  {{endfor}}
+early_commands:
+  01_announce: ["echo", "'###############################################################'"]
+  02_announce: ["echo", "'### Running curtin_usredata_amd64_generic_trusty_curtintest ###'"]
+  03_announce: ["echo", "'###############################################################'"]
+{{if third_party_drivers and driver}}
+early_commands:
+  {{py: key_string = ''.join(['\\x%x' % x for x in map(ord, driver['key_binary'])])}}
+  driver_00_get_key: /bin/echo -en '{{key_string}}' > /tmp/maas-{{driver['package']}}.gpg
+  driver_01_add_key: ["apt-key", "add", "/tmp/maas-{{driver['package']}}.gpg"]
+  driver_02_add: ["add-apt-repository", "-y", "deb {{driver['repository']}} {{node.get_distro_series()}} main"]
+  driver_03_update_install: ["sh", "-c", "apt-get update --quiet && apt-get --assume-yes install {{driver['package']}}"]
+  driver_04_load: ["sh", "-c", "depmod && modprobe {{driver['module']}}"]
+{{endif}}
+partitioning_commands:
+  builtin: [] 
+  01_partition_announce: ["echo", "'### Partitioning disk ###'"] 
+  01_partition_make_label: ["/sbin/parted", "/dev/vda", "-s", "'","mklabel","msdos","'"] 
+  02_partition_make_part: ["/sbin/parted", "/dev/vda", "-s", "'","mkpart","primary","1049k","538M","'"] 
+  02_partition_set_flag: ["/sbin/parted", "/dev/vda", "-s", "'","set","1","boot","on","'"] 
+  04_partition_make_part: ["/sbin/parted", "/dev/vda", "-s", "'","mkpart","primary","538M","4538M","'"] 
+  05_partition_make_part: ["/sbin/parted", "/dev/vda", "-s", "'","mkpart","extended","4538M","1000G","'"] 
+  06_partition_make_part: ["/sbin/parted", "/dev/vda", "-s", "'","mkpart","logical","25.5G","57G","'"] 
+  07_partition_make_part: ["/sbin/parted", "/dev/vda", "-s", "'","mkpart","logical","57G","89G","'"] 
+  08_partition_make_part: ["/sbin/parted", "/dev/vda", "-s", "'","mkpart","logical","89G","1000G","'"] 
+  09_partition_announce: ["echo", "'### Creating filesystems ###'"] 
+  10_partition_make_fs: ["/sbin/mkfs", "-t", "ext4", "/dev/vda1"] 
+  11_partition_label_fs: ["/sbin/e2label", "/dev/vda1", "cloudimg-boot"] 
+  12_partition_make_fs: ["/sbin/mkfs", "-t", "ext4", "/dev/vda2"] 
+  13_partition_label_fs: ["/sbin/e2label", "/dev/vda2", "cloudimg-rootfs"] 
+  14_partition_mount_fs: ["sh", "-c", "mount /dev/vda2 $TARGET_MOUNT_POINT"] 
+  15_partition_mkdir: ["sh", "-c", "mkdir $TARGET_MOUNT_POINT/boot"] 
+  16_partition_mount_fs: ["sh", "-c", "mount /dev/vda1 $TARGET_MOUNT_POINT/boot"] 
+  17_partition_announce: ["echo", "'### Filling /etc/fstab ###'"] 
+  18_partition_make_fstab: ["sh", "-c", "echo 'LABEL=cloudimg-rootfs / ext4 defaults 0 0' >> $OUTPUT_FSTAB"] 
+  19_partition_make_fstab: ["sh", "-c", "echo 'LABEL=cloudimg-boot /boot ext4 defaults 0 0' >> $OUTPUT_FSTAB"] 
+  20_partition_make_swap: ["sh", "-c", "mkswap /dev/vda6"]
+  21_partition_make_fstab: ["sh", "-c", "echo '/dev/vda6 none	swap	sw	0 0' >> $OUTPUT_FSTAB"] 
+late_commands:
+  maas: [wget, '--no-proxy', '{{node_disable_pxe_url|escape.shell}}', '--post-data', '{{node_disable_pxe_data|escape.shell}}', '-O', '/dev/null']
+{{if third_party_drivers and driver}}
+  driver_00_key_get: curtin in-target -- sh -c "/bin/echo -en '{{key_string}}' > /tmp/maas-{{driver['package']}}.gpg"
+  driver_02_key_add: ["curtin", "in-target", "--", "apt-key", "add", "/tmp/maas-{{driver['package']}}.gpg"]
+  driver_03_add: ["curtin", "in-target", "--", "add-apt-repository", "-y", "deb {{driver['repository']}} {{node.get_distro_series()}} main"]
+  driver_04_update_install: ["curtin", "in-target", "--", "apt-get", "update", "--quiet"]
+  driver_05_install: ["curtin", "in-target", "--", "apt-get", "-y", "install", "{{driver['package']}}"]
+  driver_06_depmod: ["curtin", "in-target", "--", "depmod"]
+  driver_07_update_initramfs: ["curtin", "in-target", "--", "update-initramfs", "-u"]
+{{endif}}
+
+power_state:
+  mode: reboot
+
+{{if node.split_arch()[0] in {'i386', 'amd64'} }}
+apt_mirrors:
+  ubuntu_archive: http://{{main_archive_hostname}}/{{main_archive_directory}}
+  ubuntu_security: http://{{main_archive_hostname}}/{{main_archive_directory}}
+{{else}}
+apt_mirrors:
+  ubuntu_archive: http://{{ports_archive_hostname}}/{{ports_archive_directory}}
+  ubuntu_security: http://{{ports_archive_hostname}}/{{ports_archive_directory}}
+{{endif}}
+
+{{if http_proxy }}
+apt_proxy: {{http_proxy}}
+{{else}}
+apt_proxy: http://{{server_host}}:8000/
+{{endif}}
