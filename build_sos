@@ -1,0 +1,37 @@
+#!/bin/bash
+distro=$1
+distro=${distro:=yakkety}
+
+if [ -d ~/workshop/builds/sosreport ];then
+	echo "Directory ~/workshop/builds/sosreport Exists"
+	echo "Check content & delete before proceeding"
+
+elif [ "$(pwd)" != "/home/caribou/git/sosreport" ];then
+	echo "Must be in /home/caribou/git/sosreport"
+	echo "do cd /home/caribou/git/sosreport and rerun"
+else
+	mkdir -p ~/workshop/builds/sosreport
+	rev=$(git describe)
+	rev=${rev#Released-}
+	rev_suffix=${rev#?.?-??}
+	deb_rev=${rev%-?-$rev_suffix}
+	echo "Building sosreport-${deb_rev}+git${rev_suffix}"
+	#gitrev=$(git describe)
+	#gitrev=${gitrev#Released-3.2+} && echo $gitrev
+	mkdir ../sosreport-${deb_rev}+git${rev_suffix}
+	tar --exclude=.travis.yml --exclude=debian --exclude-vcs --exclude=cover -cv . | tar -x -C ../sosreport-${deb_rev}+git${rev_suffix}
+	cd ..
+	tar cvzf sosreport_${deb_rev}+git${rev_suffix}.orig.tar.gz sosreport-${deb_rev}+git${rev_suffix}
+	rm -Rf sosreport-${deb_rev}+git${rev_suffix}
+	cd sosreport
+	#pristine-tar commit ../sosreport_${deb_rev}+git${rev_suffix}.orig.tar.gz
+	#pristine-tar checkout sosreport-${deb_rev}+git${rev_suffix}.orig.tar.gz
+	mkdir -p ~/workshop/builds/sosreport/${deb_rev}
+	mv ../sosreport_${deb_rev}+git${rev_suffix}.orig.tar.gz ~/workshop/builds/sosreport/${deb_rev}
+	cd ~/workshop/builds/sosreport/${deb_rev}
+	tar xf sosreport_${deb_rev}+git${rev_suffix}.orig.tar.gz
+	cd sosreport-${deb_rev}+git${rev_suffix}
+	rsync --exclude=*.git-dpm -av ~/git/sosreport/debian .
+	dch -v ${deb_rev}+git${rev_suffix}-1 -D ${distro}
+	debuild -S
+fi
