@@ -1,0 +1,22 @@
+#!/bin/bash
+
+if [ -d ~/workshop/builds/makedumpfile ];then
+	echo "Directory ~/workshop/builds/makedumpfile Exists"
+	echo "Check content & delete before proceeding"
+
+elif [ "$(pwd)" != "/home/caribou/git/makedumpfile-next" ];then
+	echo "Must be in /home/caribou/git/makedumpfile-next"
+	echo "do cd /home/caribou/git/makedumpfile-next and rerun"
+
+else
+	mkdir -p ~/workshop/builds/makedumpfile
+	Version=$(grep ^VERSION Makefile);Version=${Version#"VERSION="} && echo "Building version "$Version
+	BuildTarget=~/workshop/builds/makedumpfile && echo "Building in "$BuildTarget
+	mkdir -p $BuildTarget/makedumpfile-${Version}
+	tar --exclude-vcs -cf - . | $(cd $BuildTarget/makedumpfile-${Version};tar xf - )
+	pristine-tar checkout makedumpfile_${Version}.orig.tar.gz
+	mv makedumpfile_${Version}.orig.tar.gz ~/workshop/builds/makedumpfile
+	cd $BuildTarget/makedumpfile-${Version}
+	dch -r
+	debuild -S
+fi
